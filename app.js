@@ -8,18 +8,10 @@ const firebaseConfig = {
     appId: "1:99774542996:web:59457e2166c9646a54f081"
 };
 firebase.initializeApp(firebaseConfig);
-
-firebase.firestore().enablePersistence().catch(err => {
-    if (err.code == 'failed-precondition') {
-        console.warn("La persistance hors-ligne a échoué, probablement à cause de plusieurs onglets ouverts.");
-    } else if (err.code == 'unimplemented') {
-        console.log("Ce navigateur ne supporte pas la persistance hors-ligne.");
-    }
-});
 const db = firebase.firestore();
 
 // 2. SÉLECTION DES ÉLÉMENTS DU DOM
-const loaderOverlay = document.getElementById('loader-overlay'); // AMÉLIORATION
+const loaderOverlay = document.getElementById('loader-overlay');
 const navContainer = document.querySelector('.crm-nav');
 const mainContent = document.querySelector('.crm-main');
 const performanceBody = document.getElementById('performance-body');
@@ -42,6 +34,8 @@ const dashboardContent = document.getElementById('dashboard-content');
 const dashboardPlaceholder = document.getElementById('dashboard-placeholder');
 const exportDashboardBtn = document.getElementById('export-dashboard');
 const filterContainer = document.querySelector('.dashboard-filters');
+// AMÉLIORATION : On sélectionne le bouton de déconnexion
+const logoutBtn = document.getElementById('logout-btn');
 
 // 3. ÉTAT DE L'APPLICATION
 const state = {
@@ -78,7 +72,6 @@ const getDaysSince = (d) => {
     return Math.max(0, Math.round((t - v) / 86400000));
 };
 
-// AMÉLIORATION : Fonctions pour gérer l'indicateur de chargement
 const showLoader = () => loaderOverlay.classList.remove('hidden');
 const hideLoader = () => loaderOverlay.classList.add('hidden');
 
@@ -245,18 +238,26 @@ const renderVisites = () => {
 // 6. FONCTIONS DU TABLEAU DE BORD
 function initDashboard() {
     if (state.dashboard.choicesInstance) {
-        const activeDealers = state.concessionnaires.filter(d => d.statut === 'actif');
-        const sortedDealers = [...activeDealers].sort((a,b) => (a.nom || "").localeCompare(b.nom || "", 'fr'));
-        const choicesData = sortedDealers.map(d => ({
-            value: d.id,
-            label: d.nom || 'Sans nom',
-        }));
-        choicesData.unshift({value: '', label: 'Choisir un concessionnaire actif...', placeholder: true});
-        state.dashboard.choicesInstance.setChoices(choicesData, 'value', 'label', true);
-        
-        if (state.dashboard.selectedDealerId) {
-            state.dashboard.choicesInstance.setChoiceByValue(state.dashboard.selectedDealerId);
-        }
+        state.dashboard.choicesInstance.destroy();
+    }
+    const activeDealers = state.concessionnaires.filter(d => d.statut === 'actif');
+    const sortedDealers = [...activeDealers].sort((a,b) => (a.nom || "").localeCompare(b.nom || "", 'fr'));
+    const choicesData = sortedDealers.map(d => ({
+        value: d.id,
+        label: d.nom || 'Sans nom',
+    }));
+    choicesData.unshift({value: '', label: 'Choisir un concessionnaire actif...', placeholder: true});
+    
+    state.dashboard.choicesInstance = new Choices(dealerSelect, {
+        choices: choicesData,
+        searchEnabled: true,
+        itemSelectText: 'Cliquer pour choisir',
+        removeItemButton: true,
+        shouldSort: false,
+    });
+
+    if (state.dashboard.selectedDealerId) {
+        state.dashboard.choicesInstance.setChoiceByValue(state.dashboard.selectedDealerId);
     }
 }
 
@@ -437,7 +438,10 @@ async function openNotesModal(id) {
         } else { list.innerHTML = '<p>Aucune note.</p>'; }
         document.getElementById('notes-input').value = '';
         notesOverlay.classList.remove('hidden');
-    } catch(e) { handleError('openNotesModal', e); }
+    } catch(e) { 
+        handleError('openNotesModal', e);
+        alert("Erreur lors de l'ouverture des notes.");
+    }
 }
 
 async function openInfoModal(id) {
@@ -457,7 +461,10 @@ async function openInfoModal(id) {
         const dfContainer = modalBody.querySelector('#df-container');
         (d.financiers || []).forEach(f => addDFRow(dfContainer, f.name, f.email));
         infoOverlay.classList.remove('hidden');
-    } catch(e) { handleError('openInfoModal', e); }
+    } catch(e) { 
+        handleError('openInfoModal', e);
+        alert("Erreur lors de l'ouverture des informations.");
+    }
 }
 
 async function openVisitHistoryModal(id) {
@@ -491,7 +498,6 @@ async function openFormationModal(id) {
     formationDateInput.value = '';
 }
 
-// AMÉLIORATION : Fonctions de sauvegarde avec gestion d'erreurs
 async function saveNotes() {
     const text = document.getElementById('notes-input').value.trim();
     if (!text || !state.currentConcessionnaireId) return;
@@ -654,6 +660,8 @@ function setupEventListeners() {
     navContainer.addEventListener('click', (e) => {
         const target = e.target.closest('.nav-tab');
         if (!target) return;
+        // Empêche de cliquer sur le bouton de déconnexion pour changer d'onglet
+        if (target.id === 'logout-btn') return;
         document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
         document.getElementById(target.dataset.tab).classList.remove('hidden');
         navContainer.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('nav-active'));
@@ -821,7 +829,9 @@ function setupEventListeners() {
 }
 
 // 10. INITIALISATION DE L'APPLICATION
-function init() {
+// AMÉLIORATION : On renomme la fonction pour plus de clarté
+function initCRM() {
+    // Le contenu de l'ancienne fonction init est ici
     const now = new Date().getFullYear();
     for (let y = now - 5; y <= now + 5; y++) {
         const opt = document.createElement('option');
@@ -829,13 +839,6 @@ function init() {
         if (y === state.selectedYear) opt.selected = true;
         yearSelect.appendChild(opt);
     }
-    
-    state.dashboard.choicesInstance = new Choices(dealerSelect, {
-        searchEnabled: true,
-        itemSelectText: 'Cliquer pour choisir',
-        removeItemButton: true,
-        shouldSort: false,
-    });
     
     dealerSelect.addEventListener('change', (event) => {
         if (event.detail.value) {
@@ -860,4 +863,26 @@ function init() {
     }
 }
 
-init();
+// AMÉLIORATION : Point d'entrée de l'application sécurisé
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+        // L'utilisateur est connecté, on lance le CRM.
+        console.log("Utilisateur authentifié détecté :", user.email);
+        initCRM();
+        if (logoutBtn) {
+            logoutBtn.style.display = 'inline-block';
+            logoutBtn.addEventListener('click', () => {
+                firebase.auth().signOut().then(() => {
+                    window.location.href = 'login.html';
+                }).catch(error => {
+                    console.error("Erreur de déconnexion : ", error);
+                    alert("Erreur lors de la déconnexion.");
+                });
+            });
+        }
+    } else {
+        // Personne n'est connecté, on redirige vers la page de connexion.
+        console.log("Aucun utilisateur, redirection vers la page de connexion.");
+        window.location.href = 'login.html';
+    }
+});
