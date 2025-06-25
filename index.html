@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Concessionnaires</title>
+    <meta name="theme-color" content="#991b1b"/>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="images/icon-192x192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="bg-car-visible"></div>
+    <div class="bg-red-overlay"></div>
+
+    <header class="crm-header">
+        <h1>CRM Concessionnaires</h1>
+    </header>
+
+    <nav class="crm-nav">
+        <button class="nav-tab nav-active" data-tab="accueil">Accueil</button>
+        <button class="nav-tab" data-tab="performance">Performance</button>
+        <button class="nav-tab" data-tab="visites">Visites</button>
+        <button class="nav-tab" data-tab="tableau-de-bord">Tableau de Bord</button>
+    </nav>
+
+    <main class="crm-main">
+        <section id="accueil" class="tab-content crm-card">
+            <div class="accueil-content">
+                <h2 class="section-title">Bienvenue sur votre tableau de bord</h2>
+                <p class="intro">Gérez les performances, suivez les visites et organisez les informations de vos concessionnaires <span class="red-text">efficacement</span>.</p>
+                <blockquote class="slogan">
+                    La performance se mesure, le succès s'organise.
+                </blockquote>
+                <p class="copyright">&copy; 2025 - Développé pour Mathieu</p>
+            </div>
+        </section>
+
+        <section id="performance" class="tab-content hidden">
+            <div class="crm-card">
+                <div class="actions-header">
+                    <div class="search-bar">
+                        <input type="text" id="search-input-performance" placeholder="Rechercher un concessionnaire...">
+                    </div>
+                    <div class="filter-inactive-wrapper">
+                        <input type="checkbox" id="show-inactive-performance">
+                        <label for="show-inactive-performance">Afficher les inactifs</label>
+                    </div>
+                    <div class="year-selector-wrapper">
+                        <label for="year-select">Année :</label>
+                        <select id="year-select"></select>
+                    </div>
+                    <div class="actions-buttons">
+                        <button id="add-concessionnaire" class="btn-action btn-add">➕ Ajouter</button>
+                        <button id="btn-import" class="btn-action btn-import-export">📥 Importer</button>
+                        <input type="file" id="import-file" class="hidden">
+                        <button id="btn-export" class="btn-action btn-import-export">📤 Exporter</button>
+                    </div>
+                </div>
+                <div class="crm-table-scroll">
+                    <table class="crm-table">
+                        <thead>
+                            <tr>
+                                <th class="col-small">#</th>
+                                <th class="col-small">INFOS</th>
+                                <th class="col-nom">Nom</th>
+                                <th class="col-taux">Taux Réclam.</th>
+                                <th class="col-mois">Janvier</th>
+                                <th class="col-mois">Février</th>
+                                <th class="col-mois">Mars</th>
+                                <th class="col-mois">Avril</th>
+                                <th class="col-mois">Mai</th>
+                                <th class="col-mois">Juin</th>
+                                <th class="col-mois">Juillet</th>
+                                <th class="col-mois">Août</th>
+                                <th class="col-mois">Sept.</th>
+                                <th class="col-mois">Oct.</th>
+                                <th class="col-mois">Nov.</th>
+                                <th class="col-mois">Déc.</th>
+                                <th class="col-total">Total <span id="header-year-total"></span></th>
+                                <th class="col-moyenne">Moyenne <span id="header-year-moyenne"></span></th>
+                                <th class="col-precedent">Moyenne année précédente</th>
+                                <th class="col-diff">Var. <span id="header-year-diff"></span></th>
+                                <th class="col-notes">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performance-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="visites" class="tab-content hidden">
+             <div class="crm-card">
+                <div class="actions-header" style="justify-content: flex-start; gap: 1.5rem;">
+                    <div class="search-bar">
+                        <input type="text" id="search-input-visites" placeholder="Rechercher un concessionnaire...">
+                    </div>
+                    <div class="filter-inactive-wrapper">
+                        <input type="checkbox" id="show-inactive-visites">
+                        <label for="show-inactive-visites">Afficher les inactifs</label>
+                    </div>
+                </div>
+                 <div class="crm-table-scroll">
+                    <table class="crm-table">
+                        <thead>
+                            <tr>
+                                <th class="col-visites-taux">Taux</th>
+                                <th class="col-visites-nom">Concessionnaire</th>
+                                <th class="col-moyenne">Moyenne Rev.</th>
+                                <th class="col-notes">Visites</th>
+                                <th class="col-total">Jours depuis</th>
+                                <th class="col-total">Google Agenda</th>
+                                <th class="col-notes">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visites-body">
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </section>
+
+        <section id="tableau-de-bord" class="tab-content hidden">
+            <div class="crm-card dashboard-container" id="dashboard-to-print">
+                <div class="dashboard-header">
+                    <div class="dashboard-search">
+                        <select id="dealer-select"></select>
+                    </div>
+                    <div class="dashboard-filters">
+                        <button data-filter="3">3 mois</button>
+                        <button data-filter="6">6 mois</button>
+                        <button data-filter="12" class="active-filter">12 mois</button>
+                    </div>
+                    <button id="export-dashboard" class="btn-action btn-import-export">Exporter PDF</button>
+                </div>
+                <div id="dashboard-content" class="hidden">
+                    <div class="dealer-summary">
+                        <div class="dealer-title-alerts">
+                            <h2 id="dealer-name"></h2>
+                            <div id="dealer-alerts"></div>
+                        </div>
+                        <div class="quick-actions">
+                            <button id="quick-add-note">📝 Ajouter Note</button>
+                            <button id="quick-add-visit">📅 Planifier Visite</button>
+                            <button id="quick-info">ℹ️ Infos</button>
+                        </div>
+                    </div>
+                    <div class="stats-cards">
+                        <div class="stat-card"><span>Total Annuel <span class="stat-year"></span></span><h3 id="annual-total">$0</h3></div>
+                        <div class="stat-card"><span>Moy. Mensuelle <span class="stat-year"></span></span><h3 id="monthly-avg">$0</h3></div>
+                        <div class="stat-card"><span>Comparaison Année Préc.</span><h3 id="comparison-prev">0%</h3></div>
+                        <div class="stat-card"><span>Taux Réclamation</span><h3 id="claim-rate">0%</h3></div>
+                    </div>
+                    <div class="charts-container">
+                        <div class="chart-wrapper">
+                            <h4>Répartition des revenus <span class="stat-year"></span></h4>
+                            <canvas id="revenuPieChart"></canvas>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h4>Évolution vs Année Préc.</h4>
+                            <canvas id="revenuLineChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="monthly-comparison">
+                        <h4>Comparaison Mensuelle Détaillée</h4>
+                        <div class="crm-table-scroll">
+                            <table class="crm-table" id="monthly-detail-table">
+                              <thead>
+                                <tr>
+                                  <th>Mois</th>
+                                  <th>Année actuelle (<span class="stat-year"></span>)</th>
+                                  <th>Année précédente (<span class="stat-year-prev"></span>)</th>
+                                  <th>Écart ($)</th>
+                                  <th>Écart (%)</th>
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bottom-widgets">
+                        <div class="dashboard-widget">
+                            <div class="widget-header">
+                                <h4>Suivi des visites</h4>
+                                <button class="btn-link" id="btn-view-all-visits">Voir tout...</button>
+                            </div>
+                            <p>Dernière visite : <strong id="last-visit-date">N/A</strong></p>
+                            <p>Jours depuis : <strong id="days-since-visit">N/A</strong></p>
+                        </div>
+
+                        <div class="dashboard-widget">
+                            <div class="widget-header">
+                                <h4>Formations / Coaching</h4>
+                                <button class="btn-action btn-add btn-add-formation" id="btn-add-formation">➕ Ajouter</button>
+                            </div>
+                            <ul id="recent-formations-list" class="widget-list">
+                                <li>Aucune formation.</li>
+                            </ul>
+                        </div>
+
+                        <div class="dashboard-widget">
+                             <div class="widget-header">
+                                <h4>Notes récentes</h4>
+                                <button class="btn-link" id="btn-view-all-notes">Voir tout...</button>
+                            </div>
+                            <ul id="recent-notes-list" class="widget-list">
+                                <li>Aucune note.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                 <div id="dashboard-placeholder">
+                    <p>Veuillez sélectionner un concessionnaire pour afficher son tableau de bord.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <div id="notes-overlay" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="notes-title">Notes</h3>
+                <button id="notes-close" class="modal-close">✖</button>
+            </div>
+            <div id="notes-list" class="modal-list"></div>
+            <div class="modal-add">
+                <textarea id="notes-input" rows="3" placeholder="Ajouter une nouvelle note..."></textarea>
+                <button id="notes-save">Ajouter</button>
+            </div>
+        </div>
+    </div>
+    <div id="info-overlay" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="info-title">Informations</h3>
+                <button id="info-close" class="modal-close">✖</button>
+            </div>
+            <div id="info-modal-body" class="modal-body"></div>
+        </div>
+    </div>
+    <div id="visit-history-overlay" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="visit-history-title">Historique des visites</h3>
+                <button id="visit-history-close" class="modal-close">✖</button>
+            </div>
+            <div id="visit-history-list" class="modal-list"></div>
+        </div>
+    </div>
+    
+    <div id="formation-overlay" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="formation-title">Ajouter une formation</h3>
+                <button id="formation-close" class="modal-close">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-group">
+                    <label for="formation-date">Date de la formation</label>
+                    <input type="text" id="formation-date" placeholder="Sélectionner une date...">
+                </div>
+                <div class="info-group">
+                    <label for="formation-titre">Titre de la formation</label>
+                    <input type="text" id="formation-titre" placeholder="Ex: Coaching performance service">
+                </div>
+            </div>
+            <div class="modal-add">
+                <button id="formation-save">Enregistrer la formation</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
