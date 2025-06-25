@@ -19,6 +19,7 @@ firebase.firestore().enablePersistence().catch(err => {
 const db = firebase.firestore();
 
 // 2. SÉLECTION DES ÉLÉMENTS DU DOM
+const loaderOverlay = document.getElementById('loader-overlay'); // AMÉLIORATION
 const navContainer = document.querySelector('.crm-nav');
 const mainContent = document.querySelector('.crm-main');
 const performanceBody = document.getElementById('performance-body');
@@ -77,6 +78,10 @@ const getDaysSince = (d) => {
     return Math.max(0, Math.round((t - v) / 86400000));
 };
 
+// AMÉLIORATION : Fonctions pour gérer l'indicateur de chargement
+const showLoader = () => loaderOverlay.classList.remove('hidden');
+const hideLoader = () => loaderOverlay.classList.add('hidden');
+
 // 5. FONCTIONS DE RENDU
 const renderAll = () => {
     try {
@@ -104,7 +109,6 @@ const renderPerformance = () => {
       .filter(doc => state.showInactive || doc.statut === 'actif')
       .filter(doc => (doc.nom || '').toLowerCase().includes(state.searchTermPerformance.toLowerCase()))
       .sort((a, b) => (a.nom || '').localeCompare(b.nom || '', 'fr'));
-
 
     concessionnairesFiltres.forEach(doc => {
         const dataForYear = (doc.data && doc.data[currentYear]) || {};
@@ -198,7 +202,6 @@ const renderVisites = () => {
             : `<button class="btn-reactivate" aria-label="Réactiver" title="Réactiver">🔄</button>
                <button class="btn-delete-permanent" aria-label="Supprimer Définitivement" title="Supprimer Définitivement">🗑️</button>`;
 
-        // NOTE : Ordre des cellules <td> inversé pour correspondre à la correction de l'en-tête dans index.html
         tr.innerHTML = `
             <td data-label="Taux"><div class="static-badge" style="background-color:${tauxBg}; color:${tauxColor};">${taux}%</div></td>
             <td data-label="Concessionnaire">${doc.nom || ''}</td>
@@ -229,7 +232,10 @@ const renderVisites = () => {
                     try {
                         await db.collection('concessionnaires').doc(doc.id).update({ visites: firebase.firestore.FieldValue.arrayUnion(newDate) });
                         fetchDataAndRender();
-                    } catch (e) { handleError('Mise à jour visite', e); }
+                    } catch (e) {
+                        handleError('Mise à jour visite', e);
+                        alert("Erreur lors de l'ajout de la visite : " + e.message);
+                    }
                 }
             });
         }
@@ -253,6 +259,7 @@ function initDashboard() {
         }
     }
 }
+
 function renderDashboardForSelectedDealer() {
     const dashboardSection = document.getElementById('tableau-de-bord');
     if (dashboardSection.classList.contains('hidden')) {
@@ -410,6 +417,7 @@ function addDFRow(container, name = '', email = '') {
     div.innerHTML = `<label>Directeur financier</label><input type="text" class="df-name" value="${name}" placeholder="Nom du directeur financier"/><input type="email" class="df-email" value="${email}" placeholder="Adresse e-mail du directeur financier"/><button type="button" class="df-delete-btn" aria-label="Supprimer Directeur financier">❌</button>`;
     container.appendChild(div);
 }
+
 async function openNotesModal(id) {
     state.currentConcessionnaireId = id;
     try {
@@ -431,6 +439,7 @@ async function openNotesModal(id) {
         notesOverlay.classList.remove('hidden');
     } catch(e) { handleError('openNotesModal', e); }
 }
+
 async function openInfoModal(id) {
     state.currentConcessionnaireId = id;
     try {
@@ -450,6 +459,7 @@ async function openInfoModal(id) {
         infoOverlay.classList.remove('hidden');
     } catch(e) { handleError('openInfoModal', e); }
 }
+
 async function openVisitHistoryModal(id) {
     state.currentConcessionnaireId = id;
     const c = state.concessionnaires.find(doc => doc.id === id);
@@ -468,6 +478,7 @@ async function openVisitHistoryModal(id) {
     } else { list.innerHTML = '<p>Aucune visite enregistrée.</p>'; }
     visitHistoryOverlay.classList.remove('hidden');
 }
+
 async function openFormationModal(id) {
     state.currentConcessionnaireId = id;
     formationTitreInput.value = '';
@@ -479,6 +490,8 @@ async function openFormationModal(id) {
     });
     formationDateInput.value = '';
 }
+
+// AMÉLIORATION : Fonctions de sauvegarde avec gestion d'erreurs
 async function saveNotes() {
     const text = document.getElementById('notes-input').value.trim();
     if (!text || !state.currentConcessionnaireId) return;
@@ -489,8 +502,12 @@ async function saveNotes() {
         });
         await fetchDataAndRender();
         openNotesModal(state.currentConcessionnaireId); 
-    } catch(e) { handleError('saveNotes', e); }
+    } catch(e) {
+        handleError('saveNotes', e);
+        alert("Erreur lors de la sauvegarde de la note : " + e.message);
+    }
 }
+
 async function saveInfo() {
     if (!state.currentConcessionnaireId) return;
     const financiers = Array.from(document.querySelectorAll('#df-container .df-group')).map(group => ({
@@ -505,10 +522,15 @@ async function saveInfo() {
     };
     try {
         await db.collection('concessionnaires').doc(state.currentConcessionnaireId).set(dataToSave, { merge: true });
-        fetchDataAndRender();
+        await fetchDataAndRender();
         infoOverlay.classList.add('hidden');
-    } catch(e) { handleError('saveInfo', e); }
+        alert('Informations sauvegardées avec succès !');
+    } catch(e) {
+        handleError('saveInfo', e);
+        alert("Erreur lors de la sauvegarde des informations : " + e.message);
+    }
 }
+
 async function saveFormation() {
     const titre = formationTitreInput.value.trim();
     const date = formationDateInput.value;
@@ -523,11 +545,16 @@ async function saveFormation() {
         });
         await fetchDataAndRender();
         formationOverlay.classList.add('hidden');
-    } catch(e) { handleError('saveFormation', e); }
+        alert('Formation enregistrée avec succès !');
+    } catch(e) {
+        handleError('saveFormation', e);
+        alert("Erreur lors de l'enregistrement de la formation : " + e.message);
+    }
 }
 
 // 8. GESTION DES DONNÉES
 async function fetchDataAndRender() {
+    showLoader();
     try {
         const snapshot = await db.collection('concessionnaires').get();
         state.concessionnaires = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -537,8 +564,14 @@ async function fetchDataAndRender() {
         }
 
         renderAll();
-    } catch (e) { handleError('fetchData', e); }
+    } catch (error) {
+        handleError('fetchData', error);
+        alert("ERREUR CRITIQUE : Impossible de charger les données. Vérifiez votre connexion et les règles de sécurité Firebase. Erreur : " + error.message);
+    } finally {
+        hideLoader();
+    }
 }
+
 function selectTopPerformer() {
     const activeDealers = state.concessionnaires.filter(c => c.statut === 'actif');
     if (activeDealers.length === 0) {
@@ -552,6 +585,7 @@ function selectTopPerformer() {
     });
     state.dashboard.selectedDealerId = topPerformer.id;
 }
+
 function handleImport(event) {
     const file = event.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -585,10 +619,14 @@ function handleImport(event) {
             await batch.commit();
             alert(`${dataLines.length} concessionnaire(s) importé(s) avec succès !`);
             fetchDataAndRender();
-        } catch (err) { handleError('batch.commit', err); }
+        } catch (err) {
+            handleError('batch.commit', err);
+            alert("Erreur lors de l'importation : " + err.message);
+        }
     };
     reader.readAsText(file, "ISO-8859-1");
 }
+
 async function handleExport() {
     let csvContent = "data:text/csv;charset=utf-8,";
     const headers = [ "nom", "statut", "proprietaire_nom", "proprietaire_email", "directeur_service_nom", "directeur_service_email", 
@@ -649,8 +687,11 @@ function setupEventListeners() {
                 data: { [state.selectedYear]: { moyennePrecedente: 0, revenus:{}, tauxReclamation: 0 } }, 
                 visites: [], notes: [], formations: []
             });
-            fetchDataAndRender();
-        } catch (err) { handleError('addConcessionnaire', err); }
+            await fetchDataAndRender();
+        } catch (err) {
+            handleError('addConcessionnaire', err);
+            alert("Erreur lors de l'ajout du concessionnaire : " + err.message);
+        }
     });
     document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
     document.getElementById('import-file').addEventListener('change', handleImport);
@@ -666,34 +707,39 @@ function setupEventListeners() {
         const concessionnaire = state.concessionnaires.find(c => c.id === id);
         if (!concessionnaire) return;
         
-        if (button.matches('.info-btn')) openInfoModal(id);
-        else if (button.matches('.notes-btn')) openNotesModal(id);
-        else if (button.matches('.visit-history-btn')) openVisitHistoryModal(id);
-        else if (button.matches('.btn-calendar')) { if (state.flatpickrInstances[id]) state.flatpickrInstances[id].open(); }
-        else if (button.matches('.btn-today')) {
-            await db.collection('concessionnaires').doc(id).update({ visites: firebase.firestore.FieldValue.arrayUnion(new Date().toISOString().slice(0, 10)) });
-            fetchDataAndRender();
-        } else if (button.matches('.btn-agenda')) {
-            const now = new Date(), later = new Date(now.getTime() + 3600000);
-            const toGoogleISO = d => d.toISOString().replace(/[-:]|\.\d{3}/g, '');
-            window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Visite - ${concessionnaire.nom}`)}&dates=${toGoogleISO(now)}/${toGoogleISO(later)}`, '_blank');
-        } 
-        else if (button.matches('.btn-archive')) {
-            if (confirm(`Êtes-vous sûr de vouloir archiver ${concessionnaire.nom || 'ce concessionnaire'} ? Il sera masqué de la vue par défaut.`)) {
-                await db.collection('concessionnaires').doc(id).update({ statut: 'inactif' });
-                fetchDataAndRender();
+        try {
+            if (button.matches('.info-btn')) { openInfoModal(id); }
+            else if (button.matches('.notes-btn')) { openNotesModal(id); }
+            else if (button.matches('.visit-history-btn')) { openVisitHistoryModal(id); }
+            else if (button.matches('.btn-calendar')) { if (state.flatpickrInstances[id]) state.flatpickrInstances[id].open(); }
+            else if (button.matches('.btn-today')) {
+                await db.collection('concessionnaires').doc(id).update({ visites: firebase.firestore.FieldValue.arrayUnion(new Date().toISOString().slice(0, 10)) });
+                await fetchDataAndRender();
+            } else if (button.matches('.btn-agenda')) {
+                const now = new Date(), later = new Date(now.getTime() + 3600000);
+                const toGoogleISO = d => d.toISOString().replace(/[-:]|\.\d{3}/g, '');
+                window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Visite - ${concessionnaire.nom}`)}&dates=${toGoogleISO(now)}/${toGoogleISO(later)}`, '_blank');
+            } 
+            else if (button.matches('.btn-archive')) {
+                if (confirm(`Êtes-vous sûr de vouloir archiver ${concessionnaire.nom || 'ce concessionnaire'} ?`)) {
+                    await db.collection('concessionnaires').doc(id).update({ statut: 'inactif' });
+                    await fetchDataAndRender();
+                }
             }
-        }
-        else if (button.matches('.btn-reactivate')) {
-            await db.collection('concessionnaires').doc(id).update({ statut: 'actif' });
-            fetchDataAndRender();
-        }
-        else if (button.matches('.btn-delete-permanent')) {
-            const confirmationText = `Êtes-vous ABSOLUMENT SÛR de vouloir supprimer définitivement ${concessionnaire.nom || 'ce concessionnaire'} ?\n\nTOUTES ses données, y compris l'historique, seront perdues à jamais. Cette action est irréversible.`;
-            if (confirm(confirmationText)) {
-                await db.collection('concessionnaires').doc(id).delete();
-                fetchDataAndRender();
+            else if (button.matches('.btn-reactivate')) {
+                await db.collection('concessionnaires').doc(id).update({ statut: 'actif' });
+                await fetchDataAndRender();
             }
+            else if (button.matches('.btn-delete-permanent')) {
+                const confirmationText = `Êtes-vous SÛR de vouloir supprimer définitivement ${concessionnaire.nom || 'ce concessionnaire'} ? Cette action est irréversible.`;
+                if (confirm(confirmationText)) {
+                    await db.collection('concessionnaires').doc(id).delete();
+                    await fetchDataAndRender();
+                }
+            }
+        } catch (err) {
+            handleError('actionButton', err);
+            alert("Une erreur est survenue lors de l'action : " + err.message);
         }
     });
     
@@ -714,9 +760,13 @@ function setupEventListeners() {
         if (fieldPath) {
             try { 
                 await db.collection('concessionnaires').doc(id).update({ [fieldPath]: value }); 
-                fetchDataAndRender();
+                await fetchDataAndRender();
             }
-            catch(err) { handleError('updateField', err); }
+            catch(err) {
+                handleError('updateField', err);
+                alert("Erreur de sauvegarde du champ : " + err.message);
+                fetchDataAndRender(); 
+            }
         }
     });
 
@@ -737,13 +787,18 @@ function setupEventListeners() {
         else if (e.target.matches('.btn-delete-visit')) {
             const dateToDelete = e.target.dataset.date;
             if (confirm(`Supprimer la visite du ${dateToDelete} ?`)) {
-                await db.collection('concessionnaires').doc(state.currentConcessionnaireId).update({ visites: firebase.firestore.FieldValue.arrayRemove(dateToDelete) });
-                await fetchDataAndRender();
-                visitHistoryOverlay.classList.add('hidden');
+                try {
+                    await db.collection('concessionnaires').doc(state.currentConcessionnaireId).update({ visites: firebase.firestore.FieldValue.arrayRemove(dateToDelete) });
+                    await fetchDataAndRender();
+                    visitHistoryOverlay.classList.add('hidden');
+                } catch(err) {
+                    handleError('deleteVisit', err);
+                    alert("Erreur lors de la suppression de la visite : " + err.message);
+                }
             }
         }
     });
-
+    
     formationOverlay.addEventListener('click', (e) => {
         if (e.target === formationOverlay || e.target.matches('#formation-close')) {
             formationOverlay.classList.add('hidden');
@@ -794,7 +849,6 @@ function init() {
     
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            // NOTE : Le chemin vers sw.js est maintenant relatif pour fonctionner sur GitHub Pages
             navigator.serviceWorker.register('sw.js')
                 .then(registration => {
                     console.log('Service Worker enregistré avec succès:', registration);
