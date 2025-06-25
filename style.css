@@ -18,7 +18,6 @@ body {
 .bg-car-visible {
   position: fixed; top: 0; left: 0; z-index: -2;
   width: 100vw; height: 100vh;
-  /* NOTE : J'ai ajouté 'images/' au début du chemin */
   background: url('images/c9cc038b-b945-47e7-bf18-6a62e86cb85b.png') center/cover no-repeat;
   opacity: 0.5;
 }
@@ -28,6 +27,46 @@ body {
   background: rgba(127, 29, 29, 0.4);
 }
 .hidden { display: none !important; }
+
+/* AMÉLIORATION : Styles pour l'indicateur de chargement */
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Doit être au-dessus de tout le reste */
+    color: var(--color-primary-red-dark);
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+.loader-spinner {
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid var(--color-primary-red-dark);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* AMÉLIORATION : Meilleure visibilité pour la navigation au clavier */
+*:focus-visible {
+    outline: 3px solid var(--color-blue-action) !important;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+
 .crm-header h1 {
   text-align: center; padding: 0.8rem 0; margin: 0;
   font-size: 2.4rem; color: var(--color-white);
